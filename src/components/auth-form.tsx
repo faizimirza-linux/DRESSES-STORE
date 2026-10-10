@@ -118,13 +118,15 @@ export function AuthForm({
   );
   const [notice, setNotice] = useState<string | null>(null);
 
-  useEffect(() => {
+  const [prevMode, setPrevMode] = useState(mode);
+  if (prevMode !== mode) {
+    setPrevMode(mode);
     setPurpose(mode === "forgot" ? "reset" : mode === "register" ? "verify" : "login");
     setStep("credentials");
     setError(null);
     setNotice(null);
     setOtp("");
-  }, [mode]);
+  }
 
   const titles: Record<Mode, { title: string; sub: string }> = {
     login: { title: "Welcome back", sub: "Sign in to track orders, save measurements and checkout faster." },
@@ -342,7 +344,7 @@ export function AuthForm({
                 {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <><ShieldCheck className="h-4 w-4" /> Verify Code</>}
               </button>
               <p className="text-center text-xs text-ink-soft">
-                Didn't get it?{" "}
+                Didn&apos;t get it?{" "}
                 <button type="button" onClick={resend} disabled={busy} className="font-bold text-burgundy link-underline">
                   Resend code
                 </button>

@@ -83,7 +83,7 @@ export default async function AdminOrderDetailPage({
                           .map(([k, v]) => (
                             <div key={k} className="rounded-lg bg-blush/70 px-3 py-2">
                               <p className="text-[9px] font-bold tracking-wider text-burgundy uppercase">{k}</p>
-                              <p className="text-sm font-bold text-ink">{v}"</p>
+                              <p className="text-sm font-bold text-ink">{v}&quot;</p>
                             </div>
                           ))}
                       </div>
