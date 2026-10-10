@@ -1,0 +1,17 @@
+# Node & Build artifacts
+node_modules/
+.next/
+out/
+build/
+dist/
+
+# Netlify
+.netlify/
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Misc
+*.log
+.DS_Store

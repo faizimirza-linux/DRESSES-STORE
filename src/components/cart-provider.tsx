@@ -41,13 +41,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(KEY);
-      if (raw) setItems(JSON.parse(raw));
-    } catch {
-      /* corrupted cart — start fresh */
-    }
-    setHydrated(true);
+    queueMicrotask(() => {
+      try {
+        const raw = localStorage.getItem(KEY);
+        if (raw) setItems(JSON.parse(raw));
+      } catch {
+        /* corrupted cart — start fresh */
+      }
+      setHydrated(true);
+    });
   }, []);
 
   useEffect(() => {

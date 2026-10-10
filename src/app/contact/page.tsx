@@ -49,7 +49,7 @@ export default function ContactPage() {
     <div className="mx-auto max-w-7xl px-5 pt-40 pb-24 md:px-8 md:pt-44">
       <p className="eyebrow">Contact</p>
       <h1 className="mt-3 max-w-3xl font-display text-5xl leading-tight font-medium text-ink md:text-6xl">
-        Let's talk about <span className="display-italic text-burgundy">your dress</span>
+        Let&apos;s talk about <span className="display-italic text-burgundy">your dress</span>
       </h1>
 
       {/* info cards */}

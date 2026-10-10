@@ -65,7 +65,7 @@ export default async function OrderDetailPage({
         <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-amber-300 bg-amber-50 px-6 py-5">
           <p className="text-sm font-semibold text-amber-900">
             This order is waiting for its {formatPKR(order.advanceAmount)} advance — stitching
-            hasn't started yet.
+            hasn&apos;t started yet.
           </p>
           <Link href={`/payment/${order.id}`} className="btn-primary px-6 py-2.5 text-xs">
             Complete Payment
@@ -130,7 +130,7 @@ export default async function OrderDetailPage({
                           {Object.entries(it.measurements)
                             .filter(([k, v]) => v && k !== "notes")
                             .map(([k, v]) => (
-                              <span key={k}><b className="capitalize">{k}</b>: {v}"</span>
+                              <span key={k}><b className="capitalize">{k}</b>: {v}&quot;</span>
                             ))}
                         </div>
                       </div>
