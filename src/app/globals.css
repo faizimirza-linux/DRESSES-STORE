@@ -1,0 +1,141 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: var(--font-playfair), "Georgia", serif;
+  --font-body: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+
+  --color-ivory: #f4eee1;
+  --color-cream: #faf6ec;
+  --color-sand: #e9dfc8;
+  --color-ink: #1d1610;
+  --color-ink-soft: #57493b;
+  --color-burgundy: #7a1626;
+  --color-wine: #4d0e1b;
+  --color-gold: #b08d4f;
+  --color-gold-light: #d8be8c;
+  --color-blush: #efe4cf;
+
+  --shadow-luxe: 0 24px 60px -24px rgb(29 22 16 / 0.35);
+  --shadow-card: 0 10px 30px -12px rgb(29 22 16 / 0.25);
+
+  --animate-marquee: marquee 32s linear infinite;
+  --animate-marquee-slow: marquee 48s linear infinite;
+
+  @keyframes marquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-ivory text-ink font-body antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--color-burgundy);
+  color: var(--color-cream);
+}
+
+/* subtle film grain */
+.grain::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* --------------------------------- type ----------------------------------- */
+
+.eyebrow {
+  @apply text-[11px] font-semibold uppercase tracking-[0.28em] text-burgundy;
+}
+
+.display-italic {
+  @apply font-display italic;
+  letter-spacing: -0.01em;
+}
+
+/* ------------------------------- components ------------------------------- */
+
+.btn-primary {
+  @apply inline-flex items-center justify-center gap-2 rounded-full bg-burgundy px-7 py-3.5 text-sm font-semibold tracking-wide text-cream transition-all duration-300 hover:bg-wine hover:shadow-luxe active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
+}
+
+.btn-dark {
+  @apply inline-flex items-center justify-center gap-2 rounded-full bg-ink px-7 py-3.5 text-sm font-semibold tracking-wide text-cream transition-all duration-300 hover:bg-black hover:shadow-luxe active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
+}
+
+.btn-ghost {
+  @apply inline-flex items-center justify-center gap-2 rounded-full border border-ink/20 bg-transparent px-7 py-3.5 text-sm font-semibold tracking-wide text-ink transition-all duration-300 hover:border-burgundy hover:text-burgundy active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
+}
+
+.btn-gold {
+  @apply inline-flex items-center justify-center gap-2 rounded-full bg-gold px-7 py-3.5 text-sm font-semibold tracking-wide text-ink transition-all duration-300 hover:bg-gold-light hover:shadow-luxe active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
+}
+
+.field {
+  @apply w-full rounded-xl border border-ink/15 bg-cream px-4 py-3 text-sm text-ink outline-none transition-all duration-200 placeholder:text-ink/35 focus:border-burgundy focus:ring-2 focus:ring-burgundy/15;
+}
+
+.label {
+  @apply mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-soft;
+}
+
+.chip {
+  @apply inline-flex cursor-pointer items-center rounded-full border border-ink/15 px-4 py-1.5 text-xs font-semibold transition-all duration-200 hover:border-burgundy hover:text-burgundy;
+}
+
+.chip-active {
+  @apply border-burgundy bg-burgundy text-cream hover:text-cream;
+}
+
+.card {
+  @apply rounded-2xl border border-ink/10 bg-cream shadow-card;
+}
+
+.status-pill {
+  @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider;
+}
+
+.link-underline {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-size: 0% 1px;
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  transition: background-size 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.link-underline:hover {
+  background-size: 100% 1px;
+}
+
+/* image treatments */
+.img-zoom {
+  @apply overflow-hidden;
+}
+.img-zoom img {
+  @apply transition-transform duration-700 ease-out;
+}
+.img-zoom:hover img {
+  transform: scale(1.06);
+}
+
+/* thin scrollbar for chat/cart */
+.thin-scroll::-webkit-scrollbar {
+  width: 5px;
+}
+.thin-scroll::-webkit-scrollbar-thumb {
+  background: rgb(29 22 16 / 0.2);
+  border-radius: 99px;
+}
