@@ -1,0 +1,6 @@
+# Fallback for product/hero photos that haven't been uploaded to public/images yet.
+# Not forced, so any real image file added at the same path is served instead.
+[[redirects]]
+  from = "/images/*"
+  to = "/images/placeholder.svg"
+  status = 200
