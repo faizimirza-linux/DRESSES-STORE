@@ -29,7 +29,7 @@ export async function sendOtpEmail(
 }
 
 function parseSender(value: string) {
-  const match = value.match(/^(.+?)\\s*<([^<>]+)>$/);
+  const match = value.match(/^(.+?)\s*<([^<>]+)>$/);
   return match ? { name: match[1].trim(), email: match[2].trim() } : { email: value.trim() };
 }
 
