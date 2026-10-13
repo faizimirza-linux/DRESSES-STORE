@@ -23,14 +23,14 @@ const schema = z.object({
     address: z.string().min(5).max(500),
     note: z.string().max(500).optional(),
   }),
-  provider: z.enum(["stripe", "jazzcash"]),
+  // Keep the existing payment enum compatible while the advance is verified manually.
+  provider: z.enum(["stripe", "jazzcash"]).optional().default("jazzcash"),
 });
 
 /**
  * Creates an order in `pending_payment` status.
  * Prices are ALWAYS recomputed server-side; the mandatory PKR 1,000 advance
- * rule is enforced here — the order never enters the stitching queue until
- * the payment gateway confirms it via /api/payments/callback.
+ * is verified manually before the admin can move the order into stitching.
  */
 export async function POST(req: Request) {
   const user = await getSessionUser();

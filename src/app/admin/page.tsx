@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { desc, sql } from "drizzle-orm";
+import { desc, inArray, sql } from "drizzle-orm";
 import {
   ShoppingBag,
   Scissors,
@@ -58,6 +58,19 @@ export default async function AdminDashboard() {
     .leftJoin(users, sql`${orders.userId} = ${users.id}`)
     .orderBy(desc(orders.createdAt))
     .limit(6);
+
+  const recentItems = recent.length
+    ? await db
+        .select({ orderId: orderItems.orderId, name: orderItems.productName, size: orderItems.size, quantity: orderItems.quantity })
+        .from(orderItems)
+        .where(inArray(orderItems.orderId, recent.map(({ order }) => order.id)))
+    : [];
+  const recentItemSummaries = new Map<string, string[]>();
+  for (const item of recentItems) {
+    const summary = recentItemSummaries.get(item.orderId) ?? [];
+    summary.push(`${item.name} · ${item.size} × ${item.quantity}`);
+    recentItemSummaries.set(item.orderId, summary);
+  }
 
   // Measurements attached — a quick glance at the stitching queue
   const queueItems = await db
@@ -130,6 +143,7 @@ export default async function AdminDashboard() {
                 <div>
                   <p className="text-sm font-bold text-ink group-hover:text-burgundy">#{order.orderNumber}</p>
                   <p className="text-xs text-ink-soft">{customer ?? email ?? "Customer"} · {formatDate(order.createdAt)}</p>
+                  <p className="mt-1 text-[11px] text-ink/55">{(recentItemSummaries.get(order.id) ?? []).join(" · ")}</p>
                 </div>
                 <span className={`status-pill ${STATUS_STYLES[order.status]}`}>
                   {ORDER_STATUS_LABELS[order.status]}

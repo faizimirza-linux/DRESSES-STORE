@@ -113,7 +113,7 @@ export function AuthForm({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(
     oauthError === "oauth_not_configured"
-      ? "That social sign-in isn't configured yet — set the provider keys in .env, or use email below."
+      ? "Social sign-in isn't configured yet. Add that provider's client ID and client secret to the Vercel environment, then redeploy — or use email below."
       : null,
   );
   const [notice, setNotice] = useState<string | null>(null);

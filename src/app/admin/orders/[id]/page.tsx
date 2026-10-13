@@ -8,6 +8,7 @@ import { ORDER_STATUS_LABELS } from "@/lib/business";
 import { formatPKR, formatDateTime } from "@/lib/utils";
 import { STATUS_STYLES } from "../../../account/page";
 import { OrderStatusControl } from "@/components/admin/order-status-control";
+import { ManualAdvanceVerification } from "@/components/admin/manual-advance-verification";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Order Detail" };
@@ -34,6 +35,13 @@ export default async function AdminOrderDetailPage({
     .where(eq(orderEvents.orderId, order.id))
     .orderBy(asc(orderEvents.createdAt));
   const [payment] = await db.select().from(payments).where(eq(payments.orderId, order.id)).limit(1);
+  const paymentMeta = payment?.raw as { source?: string; wallet?: string } | null;
+  const paymentMethod =
+    paymentMeta?.source === "admin_manual_verification"
+      ? paymentMeta.wallet === "easypaisa" ? "EasyPaisa (manual transfer)" : "JazzCash (manual transfer)"
+      : order.advancePaid
+        ? payment?.provider === "stripe" ? "Stripe" : "Gateway / wallet payment"
+        : "Manual transfer · JazzCash or EasyPaisa";
 
   return (
     <div>
@@ -83,7 +91,7 @@ export default async function AdminOrderDetailPage({
                           .map(([k, v]) => (
                             <div key={k} className="rounded-lg bg-blush/70 px-3 py-2">
                               <p className="text-[9px] font-bold tracking-wider text-burgundy uppercase">{k}</p>
-                              <p className="text-sm font-bold text-ink">{v}"</p>
+                              <p className="text-sm font-bold text-ink">{v}&quot;</p>
                             </div>
                           ))}
                       </div>
@@ -125,6 +133,7 @@ export default async function AdminOrderDetailPage({
         {/* side column */}
         <div className="space-y-6">
           <OrderStatusControl orderId={order.id} current={order.status} advancePaid={order.advancePaid} />
+          <ManualAdvanceVerification orderId={order.id} advancePaid={order.advancePaid} />
 
           <div className="card p-6">
             <h2 className="flex items-center gap-2 font-display text-2xl font-medium text-ink">
@@ -139,7 +148,7 @@ export default async function AdminOrderDetailPage({
                 </dd>
               </div>
               <div className="flex justify-between text-ink-soft"><dt>Balance COD</dt><dd className="font-semibold text-ink">{formatPKR(order.balanceDue)}</dd></div>
-              <div className="flex justify-between text-xs text-ink/50"><dt>Gateway</dt><dd className="capitalize">{payment?.provider ?? order.paymentProvider ?? "—"}</dd></div>
+              <div className="flex justify-between gap-4 text-xs text-ink/50"><dt>Payment method</dt><dd className="text-right">{paymentMethod}</dd></div>
               {payment?.txnRef && <div className="flex justify-between text-xs text-ink/50"><dt>Txn ref</dt><dd>{payment.txnRef}</dd></div>}
               {payment?.paidAt && <div className="flex justify-between text-xs text-ink/50"><dt>Paid at</dt><dd>{formatDateTime(payment.paidAt)}</dd></div>}
             </dl>

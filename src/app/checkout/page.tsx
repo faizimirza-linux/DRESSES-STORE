@@ -5,29 +5,27 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
-  CreditCard,
-  Smartphone,
   Loader2,
   Lock,
   ShieldCheck,
   ArrowLeft,
 } from "lucide-react";
 import { useCart } from "@/components/cart-provider";
+import { OrderSuccessDialog, type OrderConfirmationDetails } from "@/components/order-success-dialog";
 import { BUSINESS } from "@/lib/business";
 import { formatPKR } from "@/lib/utils";
 
 type Me = { name: string; email: string; phone?: string } | null;
-type Provider = "jazzcash" | "stripe";
 
 export default function CheckoutPage() {
   const router = useRouter();
   const { items, subtotal, hydrated, clear } = useCart();
   const [me, setMe] = useState<Me>(null);
   const [meLoaded, setMeLoaded] = useState(false);
-  const [provider, setProvider] = useState<Provider>("jazzcash");
   const [form, setForm] = useState({ name: "", phone: "", city: "", address: "", note: "" });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [orderConfirmation, setOrderConfirmation] = useState<OrderConfirmationDetails | null>(null);
 
   useEffect(() => {
     fetch("/api/auth/me", { cache: "no-store" })
@@ -76,42 +74,27 @@ export default function CheckoutPage() {
             address: form.address,
             note: form.note,
           },
-          provider,
         }),
       });
       const orderData = await orderRes.json();
       if (!orderRes.ok) throw new Error(orderData.error ?? "Could not create order");
-
-      // 2) initiate the PKR 1,000 advance payment
-      const payRes = await fetch("/api/payments/initiate", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ orderId: orderData.orderId, provider }),
+      setOrderConfirmation({
+        orderId: orderData.orderId,
+        orderNumber: orderData.orderNumber,
+        total,
+        items: items.map((item) => ({
+          name: item.name,
+          quantity: item.quantity,
+          size: item.size,
+          measurements: item.measurements,
+          stitchingNotes: item.stitchingNotes,
+        })),
+        shipping: { ...form },
       });
-      const pay = await payRes.json();
-      if (!payRes.ok) throw new Error(pay.error ?? "Could not start payment");
-
       clear();
-
-      if (pay.type === "jazzcash_form") {
-        // auto-submit the signed JazzCash form
-        const f = document.createElement("form");
-        f.method = "POST";
-        f.action = pay.postUrl;
-        Object.entries(pay.fields as Record<string, string>).forEach(([k, v]) => {
-          const input = document.createElement("input");
-          input.type = "hidden";
-          input.name = k;
-          input.value = v;
-          f.appendChild(input);
-        });
-        document.body.appendChild(f);
-        f.submit();
-        return;
-      }
-      router.push(pay.url);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
       setBusy(false);
     }
   }
@@ -186,7 +169,7 @@ export default function CheckoutPage() {
             </div>
           </motion.section>
 
-          {/* payment method */}
+          {/* advance payment instructions */}
           <motion.section
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -195,39 +178,12 @@ export default function CheckoutPage() {
           >
             <h2 className="flex items-center gap-2 font-display text-2xl font-medium text-ink">
               <span className="grid h-7 w-7 place-items-center rounded-full bg-burgundy text-xs font-bold text-cream">2</span>
-              Advance payment method
+              PKR 1,000 advance
             </h2>
             <p className="mt-2 text-xs text-ink-soft">
-              The {formatPKR(BUSINESS.advanceAmount)} advance confirms your order and starts stitching.
-              Balance {formatPKR(balance)} on delivery.
+              After placing your order, choose JazzCash or EasyPaisa from the payment instructions.
+              Send a payment screenshot to WhatsApp 03143372162. Stitching starts after we verify the advance.
             </p>
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              {(
-                [
-                  { key: "jazzcash", icon: Smartphone, title: "JazzCash", note: "Mobile wallet / card" },
-                  { key: "stripe", icon: CreditCard, title: "Debit / Credit Card", note: "Visa · Mastercard via Stripe" },
-                ] as const
-              ).map((m) => (
-                <button
-                  type="button"
-                  key={m.key}
-                  onClick={() => setProvider(m.key)}
-                  className={`flex items-center gap-4 rounded-2xl border-2 p-5 text-left transition-all ${
-                    provider === m.key
-                      ? "border-burgundy bg-burgundy/[0.06] shadow-card"
-                      : "border-ink/10 hover:border-burgundy/40"
-                  }`}
-                >
-                  <span className={`grid h-11 w-11 place-items-center rounded-full ${provider === m.key ? "bg-burgundy text-cream" : "bg-blush text-ink"}`}>
-                    <m.icon className="h-5 w-5" />
-                  </span>
-                  <span>
-                    <span className="block text-sm font-bold text-ink">{m.title}</span>
-                    <span className="block text-xs text-ink-soft">{m.note}</span>
-                  </span>
-                </button>
-              ))}
-            </div>
           </motion.section>
         </div>
 
@@ -284,15 +240,16 @@ export default function CheckoutPage() {
               </>
             ) : (
               <>
-                <ShieldCheck className="h-4 w-4" /> Pay {formatPKR(BUSINESS.advanceAmount)} & Place Order
+                <ShieldCheck className="h-4 w-4" /> Place order & view payment details
               </>
             )}
           </button>
           <p className="mt-3 flex items-center justify-center gap-1.5 text-[11px] text-ink/45">
-            <Lock className="h-3 w-3" /> 256-bit encrypted · order confirmed only after payment
+            <Lock className="h-3 w-3" /> Order saved now · stitching begins after advance verification
           </p>
         </motion.aside>
       </form>
+      <OrderSuccessDialog order={orderConfirmation} onClose={() => setOrderConfirmation(null)} />
     </div>
   );
 }

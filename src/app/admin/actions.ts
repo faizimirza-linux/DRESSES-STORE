@@ -4,7 +4,7 @@ import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { orders, orderEvents, products } from "@/db/schema";
+import { orders, orderEvents, payments, products } from "@/db/schema";
 import { requireAdmin } from "@/lib/session";
 import { slugify } from "@/lib/utils";
 
@@ -132,4 +132,73 @@ export async function setOrderStatus(
   revalidatePath(`/account/orders/${orderId}`);
   revalidatePath("/admin");
   return { ok: true };
+}
+
+const manualAdvanceSchema = z.object({
+  wallet: z.enum(["jazzcash", "easypaisa"]),
+  txnRef: z.string().trim().max(120).optional(),
+});
+
+/** Confirm a customer-submitted wallet receipt after the admin has checked it. */
+export async function confirmManualAdvance(
+  orderId: string,
+  input: z.infer<typeof manualAdvanceSchema>,
+) {
+  await requireAdmin();
+  const data = manualAdvanceSchema.parse(input);
+
+  const result = await db.transaction(async (tx) => {
+    const [order] = await tx.select().from(orders).where(eq(orders.id, orderId)).limit(1);
+    if (!order) return { ok: false as const, error: "Order not found." };
+    if (order.advancePaid) return { ok: false as const, error: "This advance is already confirmed." };
+    if (order.status !== "pending_payment") {
+      return { ok: false as const, error: "Only an order awaiting payment can be confirmed." };
+    }
+
+    const now = new Date();
+    const method = data.wallet === "easypaisa" ? "EasyPaisa" : "JazzCash";
+    const reference = data.txnRef?.trim() || null;
+    const paymentUpdate = await tx
+      .update(payments)
+      .set({
+        status: "paid",
+        paidAt: now,
+        txnRef: reference,
+        raw: { source: "admin_manual_verification", wallet: data.wallet } as never,
+      })
+      .where(eq(payments.orderId, orderId))
+      .returning({ id: payments.id });
+
+    if (paymentUpdate.length === 0) {
+      await tx.insert(payments).values({
+        orderId,
+        provider: "jazzcash",
+        amount: order.advanceAmount,
+        status: "paid",
+        paidAt: now,
+        txnRef: reference,
+        raw: { source: "admin_manual_verification", wallet: data.wallet },
+      });
+    }
+
+    await tx
+      .update(orders)
+      .set({ status: "confirmed", advancePaid: true, paidAt: now, updatedAt: now })
+      .where(eq(orders.id, orderId));
+    await tx.insert(orderEvents).values({
+      orderId,
+      status: "confirmed",
+      note: `PKR ${order.advanceAmount.toLocaleString()} advance verified manually via ${method}${reference ? ` (ref ${reference})` : ""}. Order confirmed and added to the stitching queue.`,
+    });
+
+    return { ok: true as const };
+  });
+
+  if (result.ok) {
+    revalidatePath("/admin/orders");
+    revalidatePath(`/admin/orders/${orderId}`);
+    revalidatePath(`/account/orders/${orderId}`);
+    revalidatePath("/admin");
+  }
+  return result;
 }

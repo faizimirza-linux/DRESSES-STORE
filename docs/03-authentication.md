@@ -19,6 +19,14 @@
    form_post callback). Activate with `APPLE_CLIENT_ID/SECRET` (ES256 client
    secret JWT generated from your Apple private key).
 
+## Google OAuth production setup
+
+The live callback URI is `https://dressespk.vercel.app/api/auth/oauth/google/callback`.
+Register that exact URI in the Google OAuth client, then set non-empty
+`GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in the Vercel project's Production
+environment. `NEXT_PUBLIC_BASE_URL` must remain `https://dressespk.vercel.app` so
+the callback stays stable across deployments.
+
 ## Session
 `jose` HS256 JWT in an **httpOnly, SameSite=Lax** cookie (`dresses_session`,
 7 days). `getSessionUser()` (React-cache memoized), `requireUser()`,

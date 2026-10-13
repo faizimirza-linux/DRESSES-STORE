@@ -3,16 +3,30 @@
 ## The rule (business-critical)
 
 > Every order requires a **PKR 1,000 advance** before stitching begins.
-> Until a gateway confirms the advance, the order stays in
-> **Pending Payment** and is **never** placed in the admin stitching queue.
+> Until the owner verifies the customer's mobile-wallet payment, the order stays
+> in **Pending Payment** and is **never** placed in the admin stitching queue.
 
 Enforced in two independent places:
-1. `POST /api/payments/callback` (and the Stripe webhook) is the *only* path
-   that sets `advance_paid = true` and flips `status → confirmed`.
+1. A verified gateway callback or the admin-only manual advance verification
+   action is the only path that sets `advance_paid = true` and flips
+   `status → confirmed`.
 2. The admin `setOrderStatus` server action refuses to move an unpaid order
    past `pending_payment` (error: "Advance payment not received yet…").
 
-## Flow
+## Current customer flow (manual wallet transfer)
+1. `POST /api/orders` creates a `pending_payment` order; the server re-fetches
+   product prices and records the fixed PKR 1,000 advance due.
+2. The success popup shows JazzCash `03060314545` (Muhammad Ahmed) and EasyPaisa
+   `03143372162` (Habiba Naveed), and asks the customer to send a payment
+   screenshot to WhatsApp `03143372162`.
+3. The WhatsApp link is prefilled with the order number, dress names, sizes,
+   quantities, measurements, customer and delivery details. The customer must
+   attach the payment screenshot and tap Send.
+4. The owner checks the payment, then uses the admin order page to record the
+   wallet and optional transaction reference. Only then does the order enter
+   the stitching queue.
+
+## Gateway flow (legacy/optional)
 1. `POST /api/orders` — validates session + payload (zod), re-fetches every
    product price from the DB (client prices are never trusted), computes
    `subtotal`, `deliveryFee (250)`, `total`, `advanceAmount (1,000)`,
