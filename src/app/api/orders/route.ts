@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { orders, orderItems, orderEvents, payments, products } from "@/db/schema";
 import { getSessionUser } from "@/lib/session";
 import { BUSINESS } from "@/lib/business";
+import { sendNewOrderWhatsAppAlert } from "@/lib/whatsapp-order-alert";
 
 const itemSchema = z.object({
   productId: z.uuid(),
@@ -116,6 +117,44 @@ export async function POST(req: Request) {
     status: "pending_payment",
     note: `Order placed. Awaiting ${BUSINESS.currency} ${advanceAmount.toLocaleString()} advance payment — stitching has not started yet.`,
   });
+
+  try {
+    const alert = await sendNewOrderWhatsAppAlert({
+      orderId: order.id,
+      orderNumber,
+      total,
+      advanceAmount,
+      shipping: {
+        name: body.data.shipping.name,
+        phone: body.data.shipping.phone,
+        city: body.data.shipping.city,
+        address: body.data.shipping.address,
+        note: body.data.shipping.note,
+      },
+      items: body.data.items.map((item) => {
+        const product = byId.get(item.productId)!;
+        return {
+          productName: product.name,
+          unitPrice: product.price,
+          quantity: item.quantity,
+          size: item.size,
+          measurements: item.measurements,
+          stitchingNotes: item.stitchingNotes,
+        };
+      }),
+    });
+
+    if (alert.status === "accepted") {
+      console.info("WhatsApp order alert accepted by Meta", { orderNumber, messageId: alert.messageId });
+    } else {
+      console.warn("WhatsApp order alert not sent", { orderNumber, reason: alert.reason });
+    }
+  } catch (error) {
+    console.error("Order saved, but WhatsApp alert failed", {
+      orderNumber,
+      reason: error instanceof Error ? error.message : "unknown_error",
+    });
+  }
 
   return NextResponse.json({ ok: true, orderId: order.id, orderNumber });
 }
