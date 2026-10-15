@@ -6,6 +6,8 @@ import { users } from "@/db/schema";
 import { createSession } from "@/lib/session";
 import { exchangeCodeForProfile, type OAuthProvider } from "@/lib/oauth";
 
+const OWNER_EMAIL = (process.env.ADMIN_EMAIL ?? "mirzamuhammadfaizan0@gmail.com").trim().toLowerCase();
+
 async function finish(
   req: Request,
   provider: OAuthProvider,
@@ -41,14 +43,19 @@ async function finish(
           provider,
           emailVerified: true,
           avatarUrl: profile.avatarUrl,
-          role: "customer",
+          role: email === OWNER_EMAIL ? "admin" : "customer",
         })
         .returning();
-    } else if (!user.emailVerified || !user.avatarUrl) {
+    } else if (!user.emailVerified || !user.avatarUrl || (email === OWNER_EMAIL && user.role !== "admin")) {
       await db
         .update(users)
-        .set({ emailVerified: true, avatarUrl: user.avatarUrl ?? profile.avatarUrl })
+        .set({
+          emailVerified: true,
+          avatarUrl: user.avatarUrl ?? profile.avatarUrl,
+          ...(email === OWNER_EMAIL ? { role: "admin" as const } : {}),
+        })
         .where(eq(users.id, user.id));
+      if (email === OWNER_EMAIL) user.role = "admin";
     }
 
     await createSession({ sub: user.id, email: user.email, name: user.name, role: user.role });

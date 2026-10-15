@@ -27,8 +27,10 @@ export async function createSession(payload: SessionPayload) {
   const store = await cookies();
   store.set(SESSION_COOKIE, token, {
     httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    // The public Vercel site can be embedded in the hosted preview iframe.
+    // SameSite=None keeps the session cookie available there; local HTTP remains lax.
+    sameSite: process.env.NEXT_PUBLIC_BASE_URL?.startsWith("https://") || process.env.VERCEL_URL ? "none" : "lax",
+    secure: process.env.NEXT_PUBLIC_BASE_URL?.startsWith("https://") || Boolean(process.env.VERCEL_URL),
     maxAge: SESSION_DAYS * 24 * 60 * 60,
     path: "/",
   });

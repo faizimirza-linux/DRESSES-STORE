@@ -6,6 +6,7 @@ import { orders, orderItems, orderEvents, payments, products } from "@/db/schema
 import { getSessionUser } from "@/lib/session";
 import { BUSINESS } from "@/lib/business";
 import { sendNewOrderWhatsAppAlert } from "@/lib/whatsapp-order-alert";
+import { sendNewOrderEmail } from "@/lib/mailer";
 
 const itemSchema = z.object({
   productId: z.uuid(),
@@ -156,5 +157,30 @@ export async function POST(req: Request) {
     });
   }
 
+  try {
+    const email = await sendNewOrderEmail({
+      orderNumber,
+      total,
+      advanceAmount,
+      shipping: body.data.shipping,
+      items: body.data.items.map((item) => {
+        const product = byId.get(item.productId)!;
+        return {
+          productName: product.name,
+          unitPrice: product.price,
+          quantity: item.quantity,
+          size: item.size,
+          measurements: item.measurements,
+          stitchingNotes: item.stitchingNotes,
+        };
+      }),
+    });
+    console.info("New-order email notification", { orderNumber, status: email.status });
+  } catch (error) {
+    console.error("Order saved, but email notification failed", {
+      orderNumber,
+      reason: error instanceof Error ? error.message : "unknown_error",
+    });
+  }
   return NextResponse.json({ ok: true, orderId: order.id, orderNumber });
 }

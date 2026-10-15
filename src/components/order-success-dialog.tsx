@@ -132,7 +132,7 @@ export function OrderSuccessDialog({
               Your order is in.
             </h2>
             <p className="mt-2 max-w-md text-sm leading-relaxed text-cream/80">
-              Pay the PKR 1,000 advance using either wallet below. We’ll begin stitching once your payment is received and verified.
+              To get started on your dress, pay the PKR 1,000 advance using either wallet below. We’ll begin stitching once your payment is received and verified.
             </p>
           </div>
 
@@ -156,7 +156,7 @@ export function OrderSuccessDialog({
             </div>
 
             <div className="rounded-2xl border border-gold/50 bg-gold/10 px-4 py-3.5 text-sm leading-relaxed text-ink">
-              <b>After paying:</b> Please send a screenshot of your payment to WhatsApp <b>03143372162</b>. Include order <b>#{order.orderNumber}</b> so we can match it.
+              <b>After paying:</b> Please send us a screenshot of your payment at <b>03143372162</b> on WhatsApp. Include order <b>#{order.orderNumber}</b> so we can match it.
             </div>
 
             <a
