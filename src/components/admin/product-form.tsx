@@ -62,15 +62,22 @@ export function ProductForm({ product }: { product?: Product }) {
       const values = await Promise.all(selected.map(async (file) => {
         if (file.type.startsWith("image/")) {
           const bitmap = await createImageBitmap(file);
-          const scale = Math.min(1, 1200 / bitmap.width, 1600 / bitmap.height);
+          const scale = Math.min(1, 1000 / bitmap.width, 1400 / bitmap.height);
           const canvas = document.createElement("canvas");
           canvas.width = Math.max(1, Math.round(bitmap.width * scale));
           canvas.height = Math.max(1, Math.round(bitmap.height * scale));
           canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
           bitmap.close();
-          return canvas.toDataURL("image/webp", 0.72);
+          // Keep Server Action requests reliable on mobile and Vercel. Reduce
+          // quality until each stored data URL is below roughly 650 KB.
+          for (const quality of [0.62, 0.5, 0.4, 0.3]) {
+            const encoded = canvas.toDataURL("image/webp", quality);
+            if (encoded.length <= 680_000 || quality === 0.3) return encoded;
+          }
+          throw new Error(`${file.name} could not be compressed enough.`);
         }
         if (!/^(video\/mp4|video\/webm|video\/quicktime)$/i.test(file.type)) throw new Error(`${file.name} is not a supported image or video.`);
+        if (file.size > 1_500_000) throw new Error(`${file.name} is too large. Videos must be under 1.5 MB.`);
         return await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
           reader.onload = () => resolve(String(reader.result));
