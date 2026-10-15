@@ -28,7 +28,13 @@ const productSchema = z.object({
 
 export async function saveProduct(input: z.infer<typeof productSchema>) {
   await requireAdmin();
-  const data = productSchema.parse(input);
+  const parsed = productSchema.safeParse(input);
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0];
+    const field = issue?.path[0] ? `${String(issue.path[0])}: ` : "";
+    return { ok: false as const, error: `${field}${issue?.message ?? "Please check the product details."}` };
+  }
+  const data = parsed.data;
   const slug = data.slug?.trim() ? slugify(data.slug) : slugify(data.name);
 
   const values = {
@@ -48,11 +54,21 @@ export async function saveProduct(input: z.infer<typeof productSchema>) {
   };
 
   let id = data.id;
-  if (id) {
-    await db.update(products).set(values).where(eq(products.id, id));
-  } else {
-    const [row] = await db.insert(products).values(values).returning({ id: products.id });
-    id = row.id;
+  try {
+    if (id) {
+      await db.update(products).set(values).where(eq(products.id, id));
+    } else {
+      const [row] = await db.insert(products).values(values).returning({ id: products.id });
+      if (!row) return { ok: false as const, error: "The dress could not be saved. Please try again." };
+      id = row.id;
+    }
+  } catch (error) {
+    const code = error && typeof error === "object" && "code" in error ? String(error.code) : "";
+    if (code === "23505") {
+      return { ok: false as const, error: "That URL slug is already in use. Choose a different slug or dress name." };
+    }
+    console.error("Product save failed", error);
+    return { ok: false as const, error: "The dress could not be saved right now. Please try again." };
   }
 
   revalidatePath("/admin/products");

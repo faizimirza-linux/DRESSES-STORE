@@ -117,9 +117,9 @@ export function ProductForm({ product }: { product?: Product }) {
           featured,
           active,
         });
+        if (!res.ok) throw new Error(res.error);
         router.push("/admin/products");
         router.refresh();
-        void res;
       } catch (err) {
         setError(err instanceof Error ? err.message : "Please check all fields and try again.");
       }
