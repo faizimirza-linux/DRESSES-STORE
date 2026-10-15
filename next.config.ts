@@ -5,7 +5,8 @@ const nextConfig: NextConfig = {
   // product record, so publishing needs more than the default action limit.
   experimental: {
     serverActions: {
-      bodySizeLimit: "5mb",
+      // Vercel Functions reject requests above 4.5 MB before Next.js runs.
+      bodySizeLimit: "4mb",
     },
   },
 };

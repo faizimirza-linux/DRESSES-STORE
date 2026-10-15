@@ -85,7 +85,12 @@ export function ProductForm({ product }: { product?: Product }) {
           reader.readAsDataURL(file);
         });
       }));
-      setImages((current) => [...current, ...values]);
+      const nextImages = [...images, ...values];
+      const encodedSize = nextImages.reduce((total, value) => total + value.length, 0);
+      if (encodedSize > 3_200_000) {
+        throw new Error("These files are too large together. Please choose fewer or smaller images (maximum about 3 MB total).");
+      }
+      setImages(nextImages);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not process the selected media.");
     } finally {
