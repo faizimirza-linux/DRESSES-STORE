@@ -45,9 +45,10 @@ export default function RootLayout({
             <ins
               className="adsbygoogle"
               style={{ display: "block" }}
-              data-ad-format="autorelaxed"
               data-ad-client="ca-pub-5014055251480611"
-              data-ad-slot="9791602752"
+              data-ad-slot="2929399677"
+              data-ad-format="auto"
+              data-full-width-responsive="true"
             />
             <Script id="adsense-unit" strategy="afterInteractive">
               {`(adsbygoogle = window.adsbygoogle || []).push({});`}
